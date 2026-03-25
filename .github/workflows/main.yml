@@ -13,11 +13,15 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
       
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y tmate neofetch
+      
       - name: Pull Proxmox Docker Image
         run: docker pull rtedpro/proxmox:9.0.11
       
       - name: Run Proxmox Container
-        run: sudo apt install tmate sudo neofetch cloudflared
         run: |
           docker run -itd \
             --name proxmoxve \
@@ -27,15 +31,25 @@ jobs:
             rtedpro/proxmox:9.0.11
       
       - name: Wait for Proxmox to start
-        run: ssh -p 443 -o StrictHostKeyChecking=no -o ServerAliveInterval=30 -R0:localhost:8006 tcp@free.pinggy.io
+        run: sleep 30
       
       - name: Check Container Status
         run: |
           docker ps -a
           docker logs proxmoxve
       
+      - name: Setup Pinggy Tunnel
+        run: |
+          echo "🌐 Starte Pinggy Tunnel..."
+          ssh -p 443 -o StrictHostKeyChecking=no -o ServerAliveInterval=30 -R0:localhost:8006 tcp@free.pinggy.io &
+          sleep 10
+      
       - name: Display Proxmox Info
         run: |
           echo "✅ Proxmox Container gestartet!"
-          echo "Access URL: http://localhost:8006"
-          echo "Container Name: proxmoxve"
+          echo "📦 Container Name: proxmoxve"
+          echo "🔗 Lokale URL: http://localhost:8006"
+          echo "🌍 Pinggy Tunnel aktiv - Check Logs für Public URL"
+      
+      - name: Keep alive (Optional - für Tests)
+        run: sleep 3600
