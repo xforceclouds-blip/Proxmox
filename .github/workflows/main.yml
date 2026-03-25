@@ -1,0 +1,41 @@
+name: Run Proxmox Container
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  run-proxmox:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Pull Proxmox Docker Image
+        run: docker pull rtedpro/proxmox:9.0.11
+      
+      - name: Run Proxmox Container
+        run: sudo apt install tmate sudo neofetch cloudflared
+        run: |
+          docker run -itd \
+            --name proxmoxve \
+            --hostname pve \
+            -p 8006:8006 \
+            --privileged \
+            rtedpro/proxmox:9.0.11
+      
+      - name: Wait for Proxmox to start
+        run: ssh -p 443 -o StrictHostKeyChecking=no -o ServerAliveInterval=30 -R0:localhost:8006 tcp@free.pinggy.io
+      
+      - name: Check Container Status
+        run: |
+          docker ps -a
+          docker logs proxmoxve
+      
+      - name: Display Proxmox Info
+        run: |
+          echo "✅ Proxmox Container gestartet!"
+          echo "Access URL: http://localhost:8006"
+          echo "Container Name: proxmoxve"
